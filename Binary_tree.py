@@ -1,6 +1,7 @@
 
-import networkx as nx
-import matplotlib.pyplot as plt
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QGraphicsEllipseItem, QGraphicsTextItem
+from PyQt5.QtCore import Qt
 
 class TreeNode:
     def __init__(self, key):
@@ -24,47 +25,54 @@ class BinaryTree:
             node.right = self._insert_recursive(node.right, key)
         return node
 
-    def display(self):
-        G = nx.DiGraph()
-        labels = {}
-        self._plot_tree(self.root, G, labels)
+class BinaryTreeWidget(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-        pos = nx.spring_layout(G)
-        plt.figure(figsize=(8, 6))
-        nx.draw(G, pos, with_labels=True, labels=labels, node_size=500, font_size=10, font_color='black', node_color='lightblue', edge_color='black')
-        plt.title("Binary Tree Visualization")
-        plt.axis('off')
-        plt.show()
+        self.initUI()
 
-    def _plot_tree(self, node, G, labels):
+    def initUI(self):
+        self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle('Binary Tree Visualization')
+
+        self.scene = QGraphicsScene(self)
+        self.view = QGraphicsView(self.scene)
+        self.setCentralWidget(self.view)
+
+        self.tree = BinaryTree()
+        self.tree.insert(5)
+        self.tree.insert(3)
+        self.tree.insert(8)
+        self.tree.insert(1)
+        self.tree.insert(4)
+        self.tree.insert(7)
+        self.tree.insert(9)
+
+        self.draw_tree(self.tree.root, 400, 50, 400)
+
+    def draw_tree(self, node, x, y, spacing):
         if node:
-            G.add_node(node.key)
-            labels[node.key] = str(node.key)
+            item = QGraphicsEllipseItem(x - 20, y - 20, 40, 40)
+            item.setFlag(QGraphicsEllipseItem.ItemIsMovable)
+            text_item = QGraphicsTextItem(str(node.key))
+            text_item.setPos(x - 10, y - 10)
+            self.scene.addItem(item)
+            self.scene.addItem(text_item)
+
             if node.left:
-                G.add_edge(node.key, node.left.key)
-                self._plot_tree(node.left, G, labels)
+                left_x = x - spacing
+                left_y = y + 100
+                self.scene.addLine(x, y, left_x, left_y)
+                self.draw_tree(node.left, left_x, left_y, spacing / 2)
+
             if node.right:
-                G.add_edge(node.key, node.right.key)
-                self._plot_tree(node.right, G, labels)
+                right_x = x + spacing
+                right_y = y + 100
+                self.scene.addLine(x, y, right_x, right_y)
+                self.draw_tree(node.right, right_x, right_y, spacing / 2)
 
-# Interactive usage:
-if __name__ == "__main__":
-    binary_tree = BinaryTree()
-
-    root = int(input("Enter the root value: "))
-    binary_tree.insert(root)
-
-    while True:
-        key_input = input("Enter a child value (or type 'finished' to end): ")
-        if key_input.lower() == 'finished':
-            break
-
-        try:
-            key = int(key_input)
-        except ValueError:
-            print("Invalid input. Please enter a numeric value.")
-            continue
-
-        binary_tree.insert(key)
-
-    binary_tree.display()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = BinaryTreeWidget()
+    ex.show()
+    sys.exit(app.exec_())
